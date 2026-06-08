@@ -1,0 +1,13 @@
+services:
+  tvm:
+    build: .
+    image: tvm-embedded
+    environment:
+      - PYTHONPATH=/tvm/python
+      - LD_LIBRARY_PATH=/tvm/build/lib
+    volumes:
+      - ./scripts:/workspace/scripts
+      - ./output:/workspace/output
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
