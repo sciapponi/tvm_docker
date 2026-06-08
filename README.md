@@ -27,5 +27,6 @@ Generated C sources land in `output/model_<target>.tar`
 
 ## Inspect via
 ```bash
+sudo mkdir output/inspected_model/
 sudo tar -xvf output/model_cortex_m4.tar -C output/inspected_model/
 ```
