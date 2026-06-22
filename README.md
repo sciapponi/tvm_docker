@@ -5,7 +5,7 @@
 ## Setup
 ```bash
 git clone 
-cd tvm-embedded
+cd tvm_docker
 docker compose build  # ~20 min first time
 ```
 
