@@ -25,27 +25,16 @@ class ManualGRUCell(nn.Module):
 class StatefulCnnGruUnrolled(nn.Module):
     def __init__(self):
         super().__init__()
-
-        # Using Conv2d with height=1 acts identically to Conv1d but provides
-        # the 4D (NCHW) tensor structure that TVM's Relax frontend expects.
         self.cnn = nn.Sequential(
-            # Layer 1: (Batch, 1, 1, 784) -> (Batch, 16, 1, 392) after pooling
-            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=(1, 3), padding=(0, 1)),
-            nn.ReLU(),
+            nn.Conv2d(1, 16, kernel_size=(1, 3), padding=(0, 1)),
+            nn.ReLU6(),          # ← ReLU6 gives tighter activation range, better int8 calibration
             nn.MaxPool2d(kernel_size=(1, 2)),
-
-            # Layer 2: (Batch, 16, 1, 392) -> (Batch, 32, 1, 196) after pooling
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(1, 3), padding=(0, 1)),
-            nn.ReLU(),
+            nn.Conv2d(16, 32, kernel_size=(1, 3), padding=(0, 1)),
+            nn.ReLU6(),
             nn.MaxPool2d(kernel_size=(1, 2)),
-
-            nn.Flatten() # Flattens to (Batch, 32 * 1 * 196) -> (Batch, 6272)
+            nn.Flatten()
         )
-
-        # 2. Linear projection layer to squash the feature map down to size 32
         self.compress = nn.Linear(32 * 196, 32)
-
-        # 3. Lightweight GRU Cell
         self.gru_cell = ManualGRUCell(input_size=32, hidden_size=64)
 
     def forward(self, x, h_in):

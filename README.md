@@ -30,3 +30,11 @@ Generated C sources land in `output/model_<target>.tar`
 sudo mkdir output/inspected_model/
 sudo tar -xvf output/model_cortex_m4.tar -C output/inspected_model/
 ```
+
+## Checks to Guarantee CMSIS export
+```
+1. QOperator format with ActivationSymmetric=True (zero points = 0 everywhere)
+2. ExprMutator to rewrite add(qnn.dense, bias) → nn.bias_add
+3. No ConvertLayout — it breaks the partitioner in TVM v0.15
+4. partition_for_cmsisnn then fires cleanly on all 7 ops
+```
