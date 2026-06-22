@@ -17,7 +17,7 @@ docker compose run --remove-orphans tvm python3 scripts/export_onnx.py
 # Compile for target (cortex-m4, cortex-m7, cortex-m33, esp32s3, esp32)
 docker compose run --remove-orphans tvm python3 scripts/compile_for_mcu.py cortex-m4
 
-# Compile for target cortex esp32s3 requires fp32 onnx
+# Compile for target esp32s3 requires fp32 onnx
 docker compose run --remove-orphans tvm python3 scripts/compile_for_mcu.py esp32s3-espdl output/stateful_model.onnx
 
 
