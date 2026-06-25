@@ -475,4 +475,21 @@ RUN uv pip install \
         attrs tornado psutil xgboost cloudpickle \
     && uv pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
 
+# ── Create a non-root user ───────────────────────────────────────────────────
+ARG USERNAME=developer
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    # Allow the user to access the TVM toolchain and virtual environment
+    && chown -R $USERNAME:$USER_GID /tvm /opt/venv
+
+# Set up environment variables for the new user's home directory
+ENV HOME=/home/$USERNAME
+ENV PATH="/home/$USERNAME/.local/bin:/opt/venv/bin:$PATH"
+
+# Switch to the non-root user
+USER $USERNAME
+
 WORKDIR /workspace

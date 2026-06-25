@@ -4,6 +4,7 @@ import tvm
 from tvm import relay
 from tvm.relay.op.contrib import cmsisnn
 from tvm.relay.op.contrib.espdl import partition_for_espdl
+from tvm.micro import export_model_library_format
 import sys
 import os
 import re
@@ -137,10 +138,17 @@ onnx_model = shape_inference.infer_shapes(onnx_model)
 actual_inputs = [node.name for node in onnx_model.graph.input]
 print(f"ONNX inputs: {actual_inputs}")
 
-shape_dict = {
-    name: (1, 1, 1, 784) if "frame" in name or "input" in name else (1, 64)
-    for name in actual_inputs
-}
+# ── Extract Actual Shapes Dynamically from ONNX Metadata ──────────────────────
+shape_dict = {}
+for input_node in onnx_model.graph.input:
+    name = input_node.name
+    shape = []
+    for dim in input_node.type.tensor_type.shape.dim:
+        # If a dimension is dynamic (<= 0), fall back to 1, otherwise use the actual value
+        shape.append(dim.dim_value if dim.dim_value > 0 else 1)
+    shape_dict[name] = tuple(shape)
+
+print(f"Discovered Input shapes: {shape_dict}")
 print(f"Input shapes: {shape_dict}")
 
 mod, params = relay.frontend.from_onnx(
@@ -222,8 +230,16 @@ with tvm.transform.PassContext(opt_level=3, config={
         )
 
 # ── Export ────────────────────────────────────────────────────────────────────
+# output_dir = "output"
+# os.makedirs(output_dir, exist_ok=True)
+# output_path = os.path.join(output_dir, f"model_{TARGET}.tar")
+# lib.export_library(output_path)
+# print(f"Exported -> {output_path}")
+# ── Export as Model Library Format (MLF) ──────────────────────────────────────
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
 output_path = os.path.join(output_dir, f"model_{TARGET}.tar")
-lib.export_library(output_path)
-print(f"Exported -> {output_path}")
+
+# This bundles your generated lib0/lib1 files AND copies the TVM CRT source files into the tarball
+export_model_library_format(lib, output_path)
+print(f"Exported Hermetic Bundle -> {output_path}")
